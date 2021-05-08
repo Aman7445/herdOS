@@ -8,10 +8,10 @@
     call switch_to_pm
     jmp $ ; this will actually never be executed
 
-%include "./16bit/herd_print.asm"
-%include "./32bit/32bit-gdt.asm"
-%include "./32bit/32bit-print.asm"
-%include "./32bit/32bit-switch.asm"
+%include "./boot/herd_print.asm"
+%include "./boot/32bit-gdt.asm"
+%include "./boot/32bit-print.asm"
+%include "./boot/32bit-switch.asm"
 
 [bits 32]
 BEGIN_PM: ; after the switch we will get here
