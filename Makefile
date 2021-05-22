@@ -5,7 +5,7 @@ OBJ = ${C_SOURCES:.c=.o}
 
 # Change this if your cross-compiler is somewhere else
 CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
-GDB = /usr/local/i386elfgcc/bin/i386-elf-gdb
+GDB = /usr/bin/gdb
 # -g: Use debugging symbols in gcc
 CFLAGS = -g
 
