@@ -18,9 +18,9 @@
 
     jmp $
 
-%include "./16bit/herd_print.asm"
-%include "./16bit/herd_print_hex.asm"
-%include "./16bit/herd_disk.asm"
+%include "./boot/herd_print.asm"
+%include "./boot/herd_print_hex.asm"
+%include "./boot/herd_disk.asm"
 
 ; Magic number
 times 510 - ($-$$) db 0
