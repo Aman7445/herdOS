@@ -8,7 +8,7 @@ CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
 GDB = /usr/bin/gdb
 # -g: Use debugging symbols in gcc
 
-CFLAGS =  -ffreestanding -fno-stack-protector -z execstack -m32 -no-pie -fno-pic 
+CFLAGS =  -ffreestanding -fno-stack-protector -z execstack -m32 -fno-pic 
 LDFLAGS=  -melf_i386
 
 # First rule is run by default
