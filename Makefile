@@ -1,48 +1,49 @@
-C_SOURCES = $(wildcard kernel/*.c drivers/*.c)
-HEADERS = $(wildcard kernel/*.h drivers/*.h)
-# Nice syntax for file extension replacement
-OBJ = ${C_SOURCES:.c=.o}
 
-# Change this if your cross-compiler is somewhere else
+C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
+HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
+
+# create source file names into object filenames
+OBJ = ${C_SOURCES:.c=.o cpu/interrupt.o}
+
 CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
 GDB = /usr/bin/gdb
 # -g: Use debugging symbols in gcc
+CFLAGS = -g -m32 -ffreestanding -Wall -Wextra -fno-exceptions
 
-CFLAGS =  -ffreestanding -fno-stack-protector -z execstack -m32 -fno-pic 
-LDFLAGS=  -melf_i386
+all : os-image.bin
 
-# First rule is run by default
-os-image.bin: boot/bootsect.bin kernel.bin
-	cat $^ > os-image.bin
+# assemble the kernel_entry
+%.o : %.asm
+	nasm $< -f elf -o $@
 
-# '--oformat binary' deletes all symbols as a collateral, so we don't need
-# to 'strip' them manually on this case
-kernel.bin: boot/kernel_entry.o ${OBJ}
-	ld ${LDFLAGS} -o $@ -Ttext 0x1000 $^ --oformat binary
+%.bin : %.asm
+	nasm -f bin $< -o $@
+
+# generic rule for building 'somefile.o' from 'somefile.c'
+# $< is the first dependency and $@ is the target file
+%.o : %.c ${HEADERS}
+	${CC} ${CFLAGS} -c $< -o $@
 
 # Used for debugging purposes
 kernel.elf: boot/kernel_entry.o ${OBJ}
-	ld ${LDFLAGS} -o $@ -Ttext 0x1000 $^ 
+	ld -m elf_i386 -o $@ -Ttext 0x1000 $^ 
 
-run: os-image.bin
-	qemu-system-x86_64 -fda os-image.bin
+# $^ is substituted with all of the target's dependency files
+kernel/kernel.bin : boot/kernel_entry.o ${OBJ}
+	ld -m elf_i386 -o $@ -Ttext 0x1000 --oformat binary $^
 
 # Open the connection to qemu and load our kernel-object file with symbols
 debug: os-image.bin kernel.elf
-	qemu-system-x86_64 -s -S -fda os-image.bin & 
-	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf" -ex "break *0x7c00" -ex "break main" -ex "c" -ex "c"
+	qemu-system-i386 -s -fda os-image.bin &
+	${GDB} -ex "target remote localhost:1234" -ex "symbol-file kernel.elf"
 
-# Generic rules for wildcards
-# To make an object, always compile from its .c
-%.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} -ffreestanding -c $< -o $@
+os-image.bin : boot/boot.bin kernel/kernel.bin
+	cat $^ > os-image.bin
 
-%.o: %.asm
-	nasm $< -f elf -o $@
+run : all
+	qemu-system-x86_64 -fda os-image.bin
 
-%.bin: %.asm
-	nasm $< -f bin -o $@
-
-clean:
-	rm -rf *.bin *.dis *.o os-image.bin *.elf
-	rm -rf kernel/*.o boot/*.bin drivers/*.o boot/*.o
+clean: 
+	rm *.bin kernel/*.o boot/*.bin boot/*.o kernel/*.bin drivers/*.o \
+	*.elf cpu/*.o libc/*.o || :
+	
